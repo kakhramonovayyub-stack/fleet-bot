@@ -57,7 +57,7 @@ def extract_data(text):
         data["total"] = total_match.group(1)
 
     # ---- GALLONS (FINAL FIX) ----
-    gallons = re.findall(r"Gallons:\s*(\d+\.\d+)", text)
+    gallons = re.findall(r"Gal\s*lons:\s*(\d+\.\d+)", text, re.IGNORECASE)
 
     if len(gallons) >= 2:
         nums = [float(g) for g in gallons]
