@@ -56,22 +56,17 @@ def extract_data(text):
     if total_match:
         data["total"] = total_match.group(1)
 
-    # ---- GALLONS (FIXED) ----
-    gallons = re.findall(r"Gallons:\s*(\d+\.\d+)", text)
+   # ---- GALLONS (FINAL FIX) ----
+gallons = re.findall(r"Gallons:\s*(\d+\.\d+)", text)
 
-    if len(gallons) >= 2:
-        g1 = float(gallons[0])
-        g2 = float(gallons[1])
+if len(gallons) >= 2:
+    nums = [float(g) for g in gallons]
 
-        if g1 > g2:
-            data["diesel_gal"] = str(g1)
-            data["def_gal"] = str(g2)
-        else:
-            data["diesel_gal"] = str(g2)
-            data["def_gal"] = str(g1)
+    data["diesel_gal"] = str(max(nums))   # bigger = diesel
+    data["def_gal"] = str(min(nums))      # smaller = DEF
 
-    elif gallons:
-        data["diesel_gal"] = gallons[0]
+elif gallons:
+    data["diesel_gal"] = gallons[0]
 
     # ---- DIESEL PRICE ----
     price_match = re.search(r"Price\s*/\s*Gal:\s*(\d+\.\d+)", text)
@@ -84,11 +79,12 @@ def extract_data(text):
         data["diesel_total"] = diesel_total_match.group(1)
 
     # ---- DEF TOTAL ----
-    def_match = re.search(r"DEF\s*(\d+\.\d+)", text, re.IGNORECASE)
-    if def_match:
-        val = def_match.group(1)
-        if data["total"] and float(val) != float(data["total"]):
-            data["def_total"] = val
+  def_match = re.search(r"DEF\s*(\d+\.\d+)", text, re.IGNORECASE)
+if def_match:
+    val = float(def_match.group(1))
+
+    if data["total"] and abs(val - float(data["total"])) > 1:
+        data["def_total"] = str(val)
 
     # ---- CLEAN ----
     data["diesel_gal"] = clean(data["diesel_gal"])
