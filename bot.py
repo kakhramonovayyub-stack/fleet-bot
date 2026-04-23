@@ -4,6 +4,8 @@ import pytesseract
 from PIL import Image
 import re
 import gspread
+import json
+
 from oauth2client.service_account import ServiceAccountCredentials
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -16,7 +18,6 @@ bot = telebot.TeleBot(BOT_TOKEN)
 # -------------------------------
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
-import json
 
 creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
 creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
