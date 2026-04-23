@@ -83,4 +83,12 @@ Reply: YES / NO / EDIT
 
     bot.send_message(ADMIN_ID, caption)
 
-bot.infinity_polling()
+import time
+
+while True:
+    try:
+        print("Bot started...")
+        bot.polling(none_stop=True, interval=0, timeout=20)
+    except Exception as e:
+        print(f"Error: {e}")
+        time.sleep(5)
