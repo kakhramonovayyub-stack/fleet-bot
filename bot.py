@@ -36,40 +36,42 @@ def extract_data(text):
     text = text.replace(",", ".")
     lines = text.split("\n")
 
-    # ---- LOCATION ----
+    # ---- LOCATION (IMPROVED) ----
     for line in lines:
-        if "," in line and len(line) < 40:
-            if any(state in line for state in ["AR", "TX", "OK", "CA", "NM"]):
-                data["location"] = line.strip()
+        if "," in line and len(line) < 50:
+            data["location"] = line.strip()
 
     # ---- TOTAL ----
     total_match = re.search(r"Total\s*(\d+\.\d+)", text)
     if total_match:
         data["total"] = total_match.group(1)
 
-    # ---- DIESEL ----
+    # ---- GALLONS (diesel + DEF) ----
     gallons = re.findall(r"Gallons:\s*(\d+\.\d+)", text)
     if gallons:
         data["diesel_gal"] = gallons[0]
     if len(gallons) > 1:
         data["def_gal"] = gallons[1]
 
+    # ---- DIESEL PRICE ----
     diesel_price = re.search(r"Price\s*/\s*Gal:\s*(\d+\.\d+)", text)
     if diesel_price:
         data["diesel_price"] = diesel_price.group(1)
 
+    # ---- DIESEL TOTAL ----
     diesel_total = re.search(r"DIE.*?(\d+\.\d+)", text, re.IGNORECASE)
     if diesel_total:
         data["diesel_total"] = diesel_total.group(1)
 
-    # ---- DEF ----
+    # ---- DEF TOTAL (STRONG FIX) ----
     def_total = re.search(r"DEF\s*(\d+\.\d+)", text, re.IGNORECASE)
     if def_total:
         val = def_total.group(1)
 
-        # avoid picking TOTAL line
-        if data["total"] and float(val) < float(data["total"]):
-            data["def_total"] = val
+        # avoid picking main total
+        if data["total"]:
+            if abs(float(val) - float(data["total"])) > 1:
+                data["def_total"] = val
 
     return data
 
