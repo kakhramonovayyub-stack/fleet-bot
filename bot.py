@@ -1,6 +1,19 @@
-# OCR VERSION FORCE
+import os
+import telebot
 import pytesseract
 from PIL import Image
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
+
+bot = telebot.TeleBot(BOT_TOKEN)
+
+def parse_group_name(name):
+    try:
+        driver, truck = name.split("/")
+        return driver.strip(), truck.strip()
+    except:
+        return name, "Unknown"
 
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
@@ -21,8 +34,8 @@ def handle_photo(message):
     try:
         img = Image.open("receipt.jpg")
         text = pytesseract.image_to_string(img)
-    except:
-        text = "OCR FAILED"
+    except Exception as e:
+        text = f"OCR FAILED: {e}"
 
     bot.send_message(ADMIN_ID, f"""
 Driver: {driver}
@@ -31,3 +44,6 @@ Truck: {truck}
 RAW OCR TEXT:
 {text[:1000]}
 """)
+
+print("Bot started...")
+bot.infinity_polling(timeout=30, long_polling_timeout=20)
