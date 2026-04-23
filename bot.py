@@ -45,21 +45,19 @@ def extract_data(text):
     text = text.replace(",", ".")
     lines = text.split("\n")
 
-  # ---- LOCATION (ROBUST FIX) ----
-   for line in lines:
-    line = line.strip()
+   # ---- LOCATION (ROBUST FIX) ----
+    for line in lines:
+        line = line.strip()
 
-    # match city, state (with or without comma)
-    match = re.search(r"([A-Za-z\s]+)[,\.]?\s+([A-Z]{2})", line)
+        match = re.search(r"([A-Za-z\s]+)[,\.]?\s+([A-Z]{2})", line)
 
-    if match:
-        city = match.group(1).strip()
-        state = match.group(2).strip()
+        if match:
+            city = match.group(1).strip()
+            state = match.group(2).strip()
 
-        # avoid picking random words like "TOTAL TX"
-        if len(city) > 3 and city.lower() not in ["total", "invoice", "pump"]:
-            data["location"] = f"{city}, {state}"
-            break
+            if len(city) > 3 and city.lower() not in ["total", "invoice", "pump"]:
+                data["location"] = f"{city}, {state}"
+                break
     # ---- TOTAL ----
     total_match = re.search(r"Total\s*(\d+\.\d+)", text)
     if total_match:
