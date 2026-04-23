@@ -20,6 +20,15 @@ def parse_group_name(name):
         return name, "Unknown"
 
 # -------------------------------
+# CLEAN NUMBERS
+# -------------------------------
+def clean(val):
+    try:
+        return str(round(float(val), 2))
+    except:
+        return val
+
+# -------------------------------
 # EXTRACT DATA FROM OCR TEXT
 # -------------------------------
 def extract_data(text):
@@ -36,17 +45,18 @@ def extract_data(text):
     text = text.replace(",", ".")
     lines = text.split("\n")
 
-    # ---- LOCATION (IMPROVED) ----
+    # ---- LOCATION ----
     for line in lines:
-        if "," in line and len(line) < 50:
+        if re.search(r"[A-Za-z]+\s*,\s*[A-Z]{2}", line):
             data["location"] = line.strip()
+            break
 
     # ---- TOTAL ----
     total_match = re.search(r"Total\s*(\d+\.\d+)", text)
     if total_match:
         data["total"] = total_match.group(1)
 
-    # ---- GALLONS (diesel + DEF) ----
+    # ---- GALLONS ----
     gallons = re.findall(r"Gallons:\s*(\d+\.\d+)", text)
     if gallons:
         data["diesel_gal"] = gallons[0]
@@ -63,20 +73,26 @@ def extract_data(text):
     if diesel_total:
         data["diesel_total"] = diesel_total.group(1)
 
-    # ---- DEF TOTAL (STRONG FIX) ----
-    def_total = re.search(r"DEF\s*(\d+\.\d+)", text, re.IGNORECASE)
-    if def_total:
-        val = def_total.group(1)
-
-        # avoid picking main total
+    # ---- DEF TOTAL ----
+    def_match = re.search(r"DEF.*?(\d+\.\d+)", text, re.IGNORECASE | re.DOTALL)
+    if def_match:
+        val = def_match.group(1)
         if data["total"]:
             if abs(float(val) - float(data["total"])) > 1:
                 data["def_total"] = val
 
+    # ---- CLEAN VALUES ----
+    data["diesel_gal"] = clean(data["diesel_gal"])
+    data["diesel_price"] = clean(data["diesel_price"])
+    data["diesel_total"] = clean(data["diesel_total"])
+    data["def_gal"] = clean(data["def_gal"])
+    data["def_total"] = clean(data["def_total"])
+    data["total"] = clean(data["total"])
+
     return data
 
 # -------------------------------
-# HANDLE PHOTO (MAIN LOGIC)
+# HANDLE PHOTO
 # -------------------------------
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
@@ -101,10 +117,10 @@ def handle_photo(message):
         bot.send_message(ADMIN_ID, f"OCR FAILED: {e}")
         return
 
-    # Extract structured data
+    # Extract data
     data = extract_data(text)
 
-    # Send to admin
+    # Send result
     bot.send_message(ADMIN_ID, f"""
 New Fuel Receipt:
 
