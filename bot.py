@@ -59,7 +59,6 @@ def extract_data(text):
     # ---- FIND ALL GALLONS ----
     gallons = re.findall(r"Gallons:\s*(\d+\.\d+)", text)
 
-    # assign biggest to diesel
     if len(gallons) >= 2:
         g1 = float(gallons[0])
         g2 = float(gallons[1])
@@ -76,13 +75,10 @@ def extract_data(text):
     if price_match:
         data["diesel_price"] = price_match.group(1)
 
-    # ---- ALL TOTAL VALUES ----
+    # ---- TOTAL VALUES ----
     totals = re.findall(r"\b(\d+\.\d{2})\b", text)
-
-    # remove main total
     filtered = [t for t in totals if t != data["total"]]
 
-    # biggest = diesel, smallest = DEF
     if len(filtered) >= 2:
         nums = sorted([float(x) for x in filtered])
         data["def_total"] = str(nums[0])
@@ -97,6 +93,51 @@ def extract_data(text):
     data["total"] = clean(data["total"])
 
     return data
+
+# -------------------------------
+# HANDLE PHOTO (YOU MISSED THIS)
+# -------------------------------
+@bot.message_handler(content_types=['photo'])
+def handle_photo(message):
+    if message.chat.type not in ['group', 'supergroup']:
+        return
+
+    group_name = message.chat.title
+    driver, truck = parse_group_name(group_name)
+
+    # download image
+    file_info = bot.get_file(message.photo[-1].file_id)
+    downloaded_file = bot.download_file(file_info.file_path)
+
+    with open("receipt.jpg", "wb") as f:
+        f.write(downloaded_file)
+
+    # OCR
+    try:
+        img = Image.open("receipt.jpg")
+        text = pytesseract.image_to_string(img)
+    except Exception as e:
+        bot.send_message(ADMIN_ID, f"OCR FAILED: {e}")
+        return
+
+    data = extract_data(text)
+
+    bot.send_message(ADMIN_ID, f"""
+New Fuel Receipt:
+
+Driver: {driver}
+Truck: {truck}
+
+Location: {data['location']}
+
+Diesel: {data['diesel_gal']} gal @ {data['diesel_price']} = {data['diesel_total']}
+DEF: {data['def_gal']} = {data['def_total']}
+
+Total: {data['total']}
+
+Reply: YES / NO / EDIT
+""")
+
 # -------------------------------
 # START BOT
 # -------------------------------
