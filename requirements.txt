@@ -1,1 +1,4 @@
 pyTelegramBotAPI
+pytesseract
+Pillow
+opencv-python-headless
