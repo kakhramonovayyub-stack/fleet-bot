@@ -1,5 +1,7 @@
 import os
 import telebot
+import pytesseract
+from PIL import Image
 import requests
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -14,20 +16,34 @@ def parse_group_name(name):
     except:
         return name, "Unknown"
 
-def fake_parse_receipt():
-    # TEMP (we will replace with real OCR next)
-    return {
-        "date": "Auto",
-        "location": "Auto",
-        "station": "Love's",
-        "diesel_gal": "100",
-        "diesel_price": "5.00",
-        "diesel_total": "500",
-        "def_gal": "5",
-        "def_price": "4.00",
-        "def_total": "20",
-        "total": "520"
+def extract_text(file_path):
+    img = Image.open(file_path)
+    text = pytesseract.image_to_string(img)
+    return text
+
+def simple_parse(text):
+    data = {
+        "date": "Unknown",
+        "location": "Unknown",
+        "station": "Unknown",
+        "diesel_gal": "0",
+        "diesel_price": "0",
+        "diesel_total": "0",
+        "def_gal": "0",
+        "def_price": "0",
+        "def_total": "0",
+        "total": "0"
     }
+
+    lines = text.split("\n")
+
+    for line in lines:
+        if "DIESEL" in line.upper():
+            data["station"] = "Fuel Station"
+        if "TOTAL" in line.upper():
+            data["total"] = line.split()[-1]
+
+    return data
 
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
@@ -37,7 +53,14 @@ def handle_photo(message):
     group_name = message.chat.title
     driver, truck = parse_group_name(group_name)
 
-    data = fake_parse_receipt()
+    file_info = bot.get_file(message.photo[-1].file_id)
+    downloaded_file = bot.download_file(file_info.file_path)
+
+    with open("receipt.jpg", 'wb') as f:
+        f.write(downloaded_file)
+
+    text = extract_text("receipt.jpg")
+    data = simple_parse(text)
 
     caption = f"""
 New Fuel Receipt:
