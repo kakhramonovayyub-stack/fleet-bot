@@ -1,3 +1,4 @@
+# OCR version 2
 import os
 import telebot
 import pytesseract
