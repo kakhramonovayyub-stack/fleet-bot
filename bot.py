@@ -45,23 +45,33 @@ def extract_data(text):
     text = text.replace(",", ".")
     lines = text.split("\n")
 
-    # ---- LOCATION ----
-    for line in lines:
-        if re.search(r"[A-Za-z]+\s*,\s*[A-Z]{2}", line):
-            data["location"] = line.strip()
-            break
+# ---- LOCATION (STRONG FIX) ----
+for line in lines:
+    if re.search(r"[A-Za-z]+\s*,\s*[A-Z]{2}", line):
+        data["location"] = line.strip()
+        break
 
     # ---- TOTAL ----
     total_match = re.search(r"Total\s*(\d+\.\d+)", text)
     if total_match:
         data["total"] = total_match.group(1)
 
-    # ---- GALLONS ----
-    gallons = re.findall(r"Gallons:\s*(\d+\.\d+)", text)
-    if gallons:
-        data["diesel_gal"] = gallons[0]
-    if len(gallons) > 1:
-        data["def_gal"] = gallons[1]
+    # ---- GALLONS (SMART DETECTION) ----
+gallons = re.findall(r"Gallons:\s*(\d+\.\d+)", text)
+
+if len(gallons) >= 2:
+    g1 = float(gallons[0])
+    g2 = float(gallons[1])
+
+    # bigger value = diesel
+    if g1 > g2:
+        data["diesel_gal"] = str(g1)
+        data["def_gal"] = str(g2)
+    else:
+        data["diesel_gal"] = str(g2)
+        data["def_gal"] = str(g1)
+elif gallons:
+    data["diesel_gal"] = gallons[0]
 
     # ---- DIESEL PRICE ----
     diesel_price = re.search(r"Price\s*/\s*Gal:\s*(\d+\.\d+)", text)
@@ -73,13 +83,11 @@ def extract_data(text):
     if diesel_total:
         data["diesel_total"] = diesel_total.group(1)
 
-    # ---- DEF TOTAL ----
-    def_match = re.search(r"DEF.*?(\d+\.\d+)", text, re.IGNORECASE | re.DOTALL)
-    if def_match:
-        val = def_match.group(1)
-        if data["total"]:
-            if abs(float(val) - float(data["total"])) > 1:
-                data["def_total"] = val
+   # ---- LOCATION (STRONG FIX) ----
+for line in lines:
+    if re.search(r"[A-Za-z]+\s*,\s*[A-Z]{2}", line):
+        data["location"] = line.strip()
+        break
 
     # ---- CLEAN VALUES ----
     data["diesel_gal"] = clean(data["diesel_gal"])
