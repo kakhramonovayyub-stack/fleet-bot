@@ -1,3 +1,4 @@
+# OCR VERSION FORCE
 import pytesseract
 from PIL import Image
 
