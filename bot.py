@@ -33,40 +33,32 @@ def extract_data(text):
         "location": ""
     }
 
-    # Normalize text
     text = text.replace(",", ".")
+    lines = text.split("\n")
 
-    # Diesel gallons
-    gallons = re.findall(r"Gallons:\s*(\d+\.\d+)", text, re.IGNORECASE)
-    if gallons:
-        data["diesel_gal"] = gallons[0]
-    if len(gallons) > 1:
-        data["def_gal"] = gallons[1]
+    # ---- LOCATION ----
+    for line in lines:
+        if "," in line and len(line) < 40:
+            if any(state in line for state in ["AR", "TX", "OK", "CA", "NM"]):
+                data["location"] = line.strip()
 
-    # Price per gallon
-    price = re.search(r"Price\s*/\s*Gal:\s*(\d+\.\d+)", text, re.IGNORECASE)
-    if price:
-        data["diesel_price"] = price.group(1)
+    # ---- TOTAL ----
+    total_match = re.search(r"Total\s*(\d+\.\d+)", text)
+    if total_match:
+        data["total"] = total_match.group(1)
 
-    # Diesel total
-    diesel_total = re.search(r"DIE.*?(\d+\.\d+)", text, re.IGNORECASE)
-    if diesel_total:
-        data["diesel_total"] = diesel_total.group(1)
+    # ---- DIESEL ----
+    diesel_block = re.search(r"DIE.*?Gallons:\s*(\d+\.\d+).*?Price\s*/\s*Gal:\s*(\d+\.\d+).*?(\d+\.\d+)", text, re.DOTALL | re.IGNORECASE)
+    if diesel_block:
+        data["diesel_gal"] = diesel_block.group(1)
+        data["diesel_price"] = diesel_block.group(2)
+        data["diesel_total"] = diesel_block.group(3)
 
-    # DEF total
-    def_total = re.search(r"DEF\s*(\d+\.\d+)", text, re.IGNORECASE)
-    if def_total:
-        data["def_total"] = def_total.group(1)
-
-    # Total
-    total = re.search(r"Total\s*(\d+\.\d+)", text)
-    if total:
-        data["total"] = total.group(1)
-
-    # Location (City, ST)
-    location = re.search(r"([A-Za-z\s]+,\s*[A-Z]{2})", text)
-    if location:
-        data["location"] = location.group(1)
+    # ---- DEF ----
+    def_block = re.search(r"DEF.*?Gallons:\s*(\d+\.\d+).*?(\d+\.\d+)", text, re.DOTALL | re.IGNORECASE)
+    if def_block:
+        data["def_gal"] = def_block.group(1)
+        data["def_total"] = def_block.group(2)
 
     return data
 
