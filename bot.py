@@ -56,10 +56,22 @@ def extract_data(text):
     if total_match:
         data["total"] = total_match.group(1)
 
-    # ---- DIESEL GALLONS ----
-    diesel_gal_match = re.search(r"Gallons:\s*(\d+\.\d+)", text)
-    if diesel_gal_match:
-        data["diesel_gal"] = diesel_gal_match.group(1)
+   # ---- ALL GALLONS ----
+gallons = re.findall(r"Gallons:\s*(\d+\.\d+)", text)
+
+if len(gallons) >= 2:
+    g1 = float(gallons[0])
+    g2 = float(gallons[1])
+
+    # bigger = diesel
+    if g1 > g2:
+        data["diesel_gal"] = str(g1)
+        data["def_gal"] = str(g2)
+    else:
+        data["diesel_gal"] = str(g2)
+        data["def_gal"] = str(g1)
+elif gallons:
+    data["diesel_gal"] = gallons[0]
 
     # ---- DEF GALLONS ----
     def_gal_match = re.search(r"DEF.*?Gallons:\s*(\d+\.\d+)", text, re.DOTALL | re.IGNORECASE)
