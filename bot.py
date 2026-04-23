@@ -47,19 +47,36 @@ def extract_data(text):
     if total_match:
         data["total"] = total_match.group(1)
 
-    # ---- DIESEL ----
-    diesel_block = re.search(r"DIE.*?Gallons:\s*(\d+\.\d+).*?Price\s*/\s*Gal:\s*(\d+\.\d+).*?(\d+\.\d+)", text, re.DOTALL | re.IGNORECASE)
-    if diesel_block:
-        data["diesel_gal"] = diesel_block.group(1)
-        data["diesel_price"] = diesel_block.group(2)
-        data["diesel_total"] = diesel_block.group(3)
+   # ---- DIESEL ----
+diesel_gal = re.search(r"Gallons:\s*(\d+\.\d+)", text)
+diesel_price = re.search(r"Price\s*/\s*Gal:\s*(\d+\.\d+)", text)
+diesel_total = re.search(r"DIE.*?(\d+\.\d+)", text)
 
-    # ---- DEF ----
-    def_block = re.search(r"DEF.*?Gallons:\s*(\d+\.\d+).*?(\d+\.\d+)", text, re.DOTALL | re.IGNORECASE)
-    if def_block:
-        data["def_gal"] = def_block.group(1)
-        data["def_total"] = def_block.group(2)
+if diesel_gal:
+    data["diesel_gal"] = diesel_gal.group(1)
 
+if diesel_price:
+    data["diesel_price"] = diesel_price.group(1)
+
+if diesel_total:
+    data["diesel_total"] = diesel_total.group(1)
+
+  # ---- DEF ----
+def_block = re.search(
+    r"DEF.*?Gallons:\s*(\d+\.\d+).*?(?:Price\s*/\s*Gal:\s*(\d+\.\d+))?.*?(\d+\.\d+)",
+    text,
+    re.DOTALL | re.IGNORECASE
+)
+
+if def_block:
+    data["def_gal"] = def_block.group(1)
+
+    # safer total (last number in DEF block but not total)
+    possible_total = def_block.group(3)
+
+    # avoid picking TOTAL line
+    if float(possible_total) < float(data["total"] or 999999):
+        data["def_total"] = possible_total
     return data
 
 # -------------------------------
