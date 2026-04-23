@@ -45,7 +45,7 @@ def extract_data(text):
     text = text.replace(",", ".")
     lines = text.split("\n")
 
-    # ---- LOCATION ----
+  # ---- LOCATION (ROBUST FIX) ----
    for line in lines:
     line = line.strip()
 
