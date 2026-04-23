@@ -1,17 +1,5 @@
-import os
-import telebot
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID"))
-
-bot = telebot.TeleBot(BOT_TOKEN)
-
-def parse_group_name(name):
-    try:
-        driver, truck = name.split("/")
-        return driver.strip(), truck.strip()
-    except:
-        return name, "Unknown"
+import pytesseract
+from PIL import Image
 
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
@@ -21,7 +9,24 @@ def handle_photo(message):
     group_name = message.chat.title
     driver, truck = parse_group_name(group_name)
 
-    bot.send_message(ADMIN_ID, f"TEST OK\nDriver: {driver}\nTruck: {truck}")
+    # download image
+    file_info = bot.get_file(message.photo[-1].file_id)
+    downloaded_file = bot.download_file(file_info.file_path)
 
-print("Bot started...")
-bot.infinity_polling(timeout=30, long_polling_timeout=20)
+    with open("receipt.jpg", 'wb') as f:
+        f.write(downloaded_file)
+
+    # OCR
+    try:
+        img = Image.open("receipt.jpg")
+        text = pytesseract.image_to_string(img)
+    except:
+        text = "OCR FAILED"
+
+    bot.send_message(ADMIN_ID, f"""
+Driver: {driver}
+Truck: {truck}
+
+RAW OCR TEXT:
+{text[:1000]}
+""")
