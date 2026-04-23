@@ -1,3 +1,36 @@
+import os
+import telebot
+import pytesseract
+from PIL import Image
+import re
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
+
+bot = telebot.TeleBot(BOT_TOKEN)
+
+# -------------------------------
+# PARSE GROUP NAME
+# -------------------------------
+def parse_group_name(name):
+    try:
+        driver, truck = name.split("/")
+        return driver.strip(), truck.strip()
+    except:
+        return name, "Unknown"
+
+# -------------------------------
+# CLEAN NUMBERS
+# -------------------------------
+def clean(val):
+    try:
+        return str(round(float(val), 2))
+    except:
+        return val
+
+# -------------------------------
+# EXTRACT DATA FROM OCR TEXT
+# -------------------------------
 def extract_data(text):
     data = {
         "diesel_gal": "",
